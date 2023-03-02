@@ -1,1 +1,2 @@
-# api-influxdb-scraper
+
+# Typescript module
