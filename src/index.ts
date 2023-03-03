@@ -1,16 +1,29 @@
 import { readConfig } from './config'
-import { transform } from './influx'
+import { createInfluxWriteApi, toInfluxPoint } from './influx'
 import { ApiScraper } from './scraper'
 
 const config = readConfig()
+const influxWriteApi = createInfluxWriteApi(config.influx)
 
-console.log(`Initializing ${config.scrapers.length} API Scrapers...`)
+console.log(`Initializing ${config.scrapers.length} API Scraper(s)...`)
+
+// Setup API Scrapers
 for (const c of config.scrapers) {
   const scraper = new ApiScraper(c)
-  setInterval(async () => {
+
+  // API Scraper request handler
+  const handleRequest = async () => {
     const response = await scraper.request()
-    console.log(`[${c.name ?? c.url}] API Scraper response:`, response)
-    const point = transform(response, c.bindings)
-    console.log('InfluxDB Point:', point)
-  }, c.requestIntervalMs)
+    if (response) {
+      const point = toInfluxPoint(response, c.bindings)
+      console.log(`[${scraper.name}] Writing InfluxDB Point: ${point}`)
+      influxWriteApi.writePoint(point)
+    }
+  }
+
+  // Perform an API request right away and in intervals after that.
+  handleRequest()
+  setInterval(async () => await handleRequest(), c.requestIntervalMs)
 }
+
+console.log('API Scraper(s) initialized, starting...')

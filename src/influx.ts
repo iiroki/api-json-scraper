@@ -1,8 +1,22 @@
-import { Point } from '@influxdata/influxdb-client'
+import { InfluxDB, Point, WriteApi } from '@influxdata/influxdb-client'
 import at from 'lodash.at'
-import { InfluxBindingConfig } from './model'
+import { InfluxBindingConfig, InfluxConfig } from './model'
 
-export const transform = (data: any, config: InfluxBindingConfig): Point => {
+export const createInfluxWriteApi = (config: InfluxConfig): WriteApi => {
+  const client = new InfluxDB({
+    url: config.url,
+    token: config.token,
+    writeOptions: {
+      batchSize: config.batchSize,
+      flushInterval: config.flushIntervalMs,
+      gzipThreshold: config.gzipThreshold
+    }
+  })
+
+  return client.getWriteApi(config.org, config.bucket, 'ms')
+}
+
+export const toInfluxPoint = (data: Record<string, any>, config: InfluxBindingConfig): Point => {
   const { measurement, tags, fields } = config
   const point = new Point(measurement).timestamp(new Date())
 
