@@ -14,5 +14,5 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /build/dist ./dist
-COPY config.json ./
+COPY config*.json ./
 CMD ["node", "dist/index.js"]
