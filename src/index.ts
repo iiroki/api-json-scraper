@@ -26,9 +26,12 @@ for (const c of config.scrapers) {
       }
 
       lastResponse = response // Store the response for filtering duplicate values
-      const point = toInfluxPoint(response, c.bindings)
-      logWithName(`Writing InfluxDB Point: ${point}`)
-      influxWriteApi.writePoint(point)
+
+      // Write the response to InfluxDB
+      const input = Array.isArray(response) ? response : [response]
+      const points = input.map(data => toInfluxPoint(data, c.bindings))
+      logWithName(`Writing InfluxDB Point(s): ${points.length}`)
+      influxWriteApi.writePoints(points)
     }
   }
 
