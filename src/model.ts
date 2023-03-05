@@ -39,12 +39,14 @@ export interface InfluxBindingConfig {
   readonly fields: FieldBindingConfig[]
 }
 
-export interface ApiScraperConfig extends ApiConfig {
-  readonly requestIntervalMs: number
+export interface ScraperConfig extends ApiConfig {
+  readonly requestIntervalMs?: number
+  readonly requestCronSchedule?: string
+  readonly requestOnStartup?: boolean
   readonly bindings: InfluxBindingConfig
 }
 
 export interface Config {
   readonly influx: InfluxConfig
-  readonly scrapers: ApiScraperConfig[]
+  readonly scrapers: ScraperConfig[]
 }
