@@ -22,6 +22,7 @@ A very simple REST (JSON) API Scraper for InfluxDB.
   - Fields
 - Duplicate response filtering -> Only changed values are sent to InfluxDB.
 - Supports object and array responses.
+- Fly.io deployment template with `Dockerfile`.
 
 ## Quickstart
 
@@ -48,7 +49,7 @@ The application has a deployment template in order to deploy the application to 
     flyctl launch
     ```
 
-2. Set the required InfluxDB configuration with env variables (see [InfluxDB](#influxdb]):
+2. Set the required InfluxDB configuration with env variables (see [InfluxDB](#influxdb])):
     ```
     flyctl secrets set <key>=<value> <key>=<value> ...
     ```
