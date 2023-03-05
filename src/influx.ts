@@ -16,7 +16,7 @@ export const createInfluxWriteApi = (config: InfluxConfig): WriteApi => {
   return client.getWriteApi(config.org, config.bucket, 'ms')
 }
 
-export const toInfluxPoint = (data: Record<string, any>, config: InfluxBindingConfig): Point => {
+export const toInfluxPoint = (data: Record<string, any>, config: InfluxBindingConfig, time?: Date): Point => {
   const { measurement, tags, fields, timestamp } = config
   const point = new Point(measurement)
 
@@ -31,7 +31,7 @@ export const toInfluxPoint = (data: Record<string, any>, config: InfluxBindingCo
   }
 
   if (!pointTimestamp) {
-    pointTimestamp = new Date()
+    pointTimestamp = time ? time : new Date()
   }
 
   point.timestamp(pointTimestamp)

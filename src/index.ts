@@ -18,6 +18,7 @@ for (const c of config.scrapers) {
   let lastResponse: any
   const handleRequest = async () => {
     const response = await scraper.request()
+    const now = new Date() // API response timestamp
 
     if (response) {
       if (c.filterDuplicateValues && areEqualSimple(response, lastResponse)) {
@@ -29,7 +30,7 @@ for (const c of config.scrapers) {
 
       // Write the response to InfluxDB
       const input = Array.isArray(response) ? response : [response]
-      const points = input.map(data => toInfluxPoint(data, c.bindings))
+      const points = input.map(data => toInfluxPoint(data, c.bindings, now))
       logWithName(`Writing InfluxDB Point(s): ${points.length}`)
       influxWriteApi.writePoints(points)
     }
