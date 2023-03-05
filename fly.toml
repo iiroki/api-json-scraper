@@ -1,0 +1,4 @@
+app = "api-influxdb-scraper"
+
+[deploy]
+  strategy = "immediate"
