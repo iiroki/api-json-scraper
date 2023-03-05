@@ -16,8 +16,13 @@ const ScraperConfigValidator: z.ZodType<ScraperConfig> = z.object({
   requestIntervalMs: z.number().optional(),
   requestCronSchedule: z.string().optional(),
   requestOnStartup: z.boolean().optional(),
+  filterDuplicateValues: z.boolean().optional(),
   bindings: z.object({
     measurement: z.string(),
+    timestamp: z.object({
+      key: z.string().optional(),
+      type: z.union([z.literal('string'), z.literal('number')]).optional()
+    }).optional(),
     tags: z.object({
       in: z.string().optional(),
       out: z.string(),
@@ -50,7 +55,6 @@ const replaceValuesFromEnv = (obj: Record<string, string>): Record<string, strin
   const result: Record<string, string> = {}
   Object.entries(obj).forEach(e => {
     const [key, value] = e
-    console.log('REPLACING:', key, value)
 
     // Read value from env, fallback to the original value.
     result[key] = value.startsWith('$')

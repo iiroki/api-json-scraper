@@ -17,8 +17,24 @@ export const createInfluxWriteApi = (config: InfluxConfig): WriteApi => {
 }
 
 export const toInfluxPoint = (data: Record<string, any>, config: InfluxBindingConfig): Point => {
-  const { measurement, tags, fields } = config
-  const point = new Point(measurement).timestamp(new Date())
+  const { measurement, tags, fields, timestamp } = config
+  const point = new Point(measurement)
+
+  // Get timestamp from the data if it's defined.
+  let pointTimestamp: Date | null = null
+  if (timestamp && timestamp.key) {
+    const { key, type } = timestamp
+    const value: string | undefined = at(data, key)[0]
+    if (value) {
+      pointTimestamp = new Date(type === 'number' ? Number(value) : value)
+    }
+  }
+
+  if (!pointTimestamp) {
+    pointTimestamp = new Date()
+  }
+
+  point.timestamp(pointTimestamp)
 
   // Tags
   tags.forEach(t => {

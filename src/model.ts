@@ -35,6 +35,10 @@ export interface InfluxConfig {
 
 export interface InfluxBindingConfig {
   readonly measurement: string
+  readonly timestamp?: {
+    readonly key?: string
+    readonly type?: 'string' | 'number'
+  }
   readonly tags: TagBindingConfig[]
   readonly fields: FieldBindingConfig[]
 }
@@ -43,6 +47,7 @@ export interface ScraperConfig extends ApiConfig {
   readonly requestIntervalMs?: number
   readonly requestCronSchedule?: string
   readonly requestOnStartup?: boolean
+  readonly filterDuplicateValues?: boolean
   readonly bindings: InfluxBindingConfig
 }
 

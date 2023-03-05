@@ -1,2 +1,5 @@
+# API-InfluxDB Scraper
 
-# Typescript module
+A very simple REST (JSON) API Scraper for InfluxDB.
+
+TODO

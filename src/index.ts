@@ -2,6 +2,7 @@ import cron from 'node-cron'
 import { readConfig } from './config'
 import { createInfluxWriteApi, toInfluxPoint } from './influx'
 import { ApiScraper } from './scraper'
+import { areEqualSimple } from './util'
 
 const config = readConfig()
 const influxWriteApi = createInfluxWriteApi(config.influx)
@@ -14,9 +15,17 @@ for (const c of config.scrapers) {
   const logWithName = (...args: any[]) => console.log(`[${scraper.name}]`, ...args)
 
   // API Scraper request handler
+  let lastResponse: any
   const handleRequest = async () => {
     const response = await scraper.request()
+
     if (response) {
+      if (c.filterDuplicateValues && areEqualSimple(response, lastResponse)) {
+        logWithName('Received same response as the previous one, skipping...')
+        return
+      }
+
+      lastResponse = response // Store the response for filtering duplicate values
       const point = toInfluxPoint(response, c.bindings)
       logWithName(`Writing InfluxDB Point: ${point}`)
       influxWriteApi.writePoint(point)
