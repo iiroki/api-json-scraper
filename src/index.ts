@@ -1,18 +1,19 @@
 import cron from 'node-cron'
 import { readConfig } from './config'
-import { createInfluxWriteApi, toInfluxPoint } from './influx'
+import { Output } from './model'
+import { createOutputs } from './output'
 import { ApiScraper } from './scraper'
-import { areEqualSimple } from './util'
+import { areEqualSimple, createLogger } from './util'
 
 const config = readConfig()
-const influxWriteApi = createInfluxWriteApi(config.influx)
+const outputs: Output[] = createOutputs(config.outputs)
 
 console.log(`Initializing ${config.scrapers.length} API Scraper(s)...`)
 
 // Setup API Scrapers
 for (const c of config.scrapers) {
   const scraper = new ApiScraper(c)
-  const logWithName = (...args: any[]) => console.log(`[${scraper.name}]`, ...args)
+  const logger = createLogger(scraper.name)
 
   // API Scraper request handler
   let lastResponse: any
@@ -22,17 +23,12 @@ for (const c of config.scrapers) {
 
     if (response) {
       if (c.filterDuplicateValues && areEqualSimple(response, lastResponse)) {
-        logWithName('Received same response as the previous one, skipping...')
+        logger.log('Received same response as the previous one, skipping...')
         return
       }
 
       lastResponse = response // Store the response for filtering duplicate values
-
-      // Write the response to InfluxDB
-      const input = Array.isArray(response) ? response : [response]
-      const points = input.map(data => toInfluxPoint(data, c.bindings, now))
-      logWithName(`Writing InfluxDB Point(s): ${points.length}`)
-      influxWriteApi.writePoints(points)
+      await Promise.all(outputs.map(o => o.save(Array.isArray(response) ? response : [response], now)))
     }
   }
 
@@ -44,14 +40,14 @@ for (const c of config.scrapers) {
   // Initialize API request interval
   if (c.requestIntervalMs) {
     setInterval(async () => await handleRequest(), c.requestIntervalMs)
-    logWithName(`Initialized API request with interval: ${c.requestIntervalMs} ms`)
+    logger.log(`Initialized API request with interval: ${c.requestIntervalMs} ms`)
   }
 
   // Initialize API request cron schedule
   if (c.requestCronSchedule) {
     cron.schedule(c.requestCronSchedule, async () => await handleRequest())
-    logWithName(`Initialized API request with cron schedule: ${c.requestCronSchedule}`)
+    logger.log(`Initialized API request with cron schedule: ${c.requestCronSchedule}`)
   }
 }
 
-console.log('API Scraper(s) initialized, starting...')
+console.log(`${config.scrapers.length} API Scraper(s) initialized, starting...`)

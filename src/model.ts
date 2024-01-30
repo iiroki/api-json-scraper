@@ -23,7 +23,24 @@ export interface ApiConfig {
   readonly body?: any
 }
 
+export interface ScraperConfig extends ApiConfig {
+  readonly requestIntervalMs?: number
+  readonly requestCronSchedule?: string
+  readonly requestOnStartup?: boolean
+  readonly filterDuplicateValues?: boolean
+}
+
+export interface OutputConfig {
+  readonly influx?: InfluxConfig
+  readonly tsp?: TspConfig
+}
+
 export interface InfluxConfig {
+  readonly api: InfluxApiConfig
+  readonly bindings: InfluxBindingConfig
+}
+
+export interface InfluxApiConfig {
   readonly url: string
   readonly token: string
   readonly bucket: string
@@ -43,15 +60,19 @@ export interface InfluxBindingConfig {
   readonly fields: FieldBindingConfig[]
 }
 
-export interface ScraperConfig extends ApiConfig {
-  readonly requestIntervalMs?: number
-  readonly requestCronSchedule?: string
-  readonly requestOnStartup?: boolean
-  readonly filterDuplicateValues?: boolean
-  readonly bindings: InfluxBindingConfig
+export interface TspConfig {
+  // TODO
 }
 
 export interface Config {
-  readonly influx: InfluxConfig
   readonly scrapers: ScraperConfig[]
+  readonly outputs: OutputConfig
+}
+
+export interface Output {
+  readonly save: (data: object[], timestamp?: Date) => Promise<void>
+}
+
+export interface Logger {
+  readonly log: (...args: any[]) => void
 }

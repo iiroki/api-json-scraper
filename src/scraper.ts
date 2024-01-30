@@ -9,7 +9,7 @@ export class ApiScraper {
   private readonly _body: any
 
   constructor(config: ApiConfig) {
-    this.name = `ApiScraper: ${config.name ?? config.url}`
+    this.name = `API Scraper - ${config.name ?? config.url}`
     this._method = config.method ?? 'GET'
     this._headers = config.headers ?? {}
     this._body = config.body ?? {}

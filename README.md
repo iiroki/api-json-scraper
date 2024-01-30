@@ -1,9 +1,12 @@
-# API-InfluxDB Scraper
+# API JSON Scraper
 
-A very simple REST (JSON) API Scraper for InfluxDB.
+A very simple JSON (REST/HTTP) API Scraper.
 
 **Features:**
 - Simple and easy to use!
+- Multiple outputs:
+  - InfluxDB
+  - Time Series Platform (my own creation :D)
 - Various API configuration options:
   - URL
   - HTTP Method
@@ -20,7 +23,7 @@ A very simple REST (JSON) API Scraper for InfluxDB.
   - Timestamp
   - Tags
   - Fields
-- Duplicate response filtering -> Only changed values are sent to InfluxDB.
+- Duplicate response filtering -> Only changed values are sent to outputs.
 - Supports object and array responses.
 - Fly.io deployment template with `Dockerfile`.
 

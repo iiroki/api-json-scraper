@@ -1,4 +1,4 @@
-app = "api-influxdb-scraper"
+app = "api-json-scraper"
 
 [deploy]
   strategy = "immediate"
