@@ -23,12 +23,12 @@ for (const c of config.scrapers) {
 
     if (response) {
       if (c.filterDuplicateValues && areEqualSimple(response, lastResponse)) {
-        logger.log('Received same response as the previous one, skipping...')
+        logger.info('Received same response as the previous one, skipping...')
         return
       }
 
       lastResponse = response // Store the response for filtering duplicate values
-      await Promise.all(outputs.map(o => o.save(Array.isArray(response) ? response : [response], now)))
+      Promise.all(outputs.map(o => o.save(c.id, Array.isArray(response) ? response : [response], now)))
     }
   }
 
@@ -40,13 +40,13 @@ for (const c of config.scrapers) {
   // Initialize API request interval
   if (c.requestIntervalMs) {
     setInterval(async () => await handleRequest(), c.requestIntervalMs)
-    logger.log(`Initialized API request with interval: ${c.requestIntervalMs} ms`)
+    logger.info(`Initialized API request with interval: ${c.requestIntervalMs} ms`)
   }
 
   // Initialize API request cron schedule
   if (c.requestCronSchedule) {
     cron.schedule(c.requestCronSchedule, async () => await handleRequest())
-    logger.log(`Initialized API request with cron schedule: ${c.requestCronSchedule}`)
+    logger.info(`Initialized API request with cron schedule: ${c.requestCronSchedule}`)
   }
 }
 

@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs'
 import dotenv from 'dotenv'
 import { z } from 'zod'
-import { ScraperConfig, Config, InfluxApiConfig, InfluxBindingConfig, TspConfig } from './model'
+import { ScraperConfig, Config, InfluxApiConfig, InfluxBindingConfig, TspConfig, TspBindingConfig, TspBindingTagConfig } from './model'
 import { replacePropertiesFromEnv } from './util'
 
 dotenv.config()
 const SCAPER_CONFIG_PATH = process.env.SCAPER_CONFIG_PATH ?? 'config.json' // Default path
 
 const zScraperConfigValidator: z.ZodType<ScraperConfig> = z.object({
-  name: z.string().optional(),
+  id: z.string(),
   url: z.string(),
   method: z.union([z.literal('GET'), z.literal('POST')]).optional(),
   headers: z.record(z.string()).optional(),
@@ -20,10 +20,23 @@ const zScraperConfigValidator: z.ZodType<ScraperConfig> = z.object({
   filterDuplicateValues: z.boolean().optional()
 })
 
+const zTspBindingTagConfig: z.ZodType<TspBindingTagConfig> = z.object({
+  slug: z.string(),
+  value: z.string(),
+  timestamp: z.string().optional()
+})
+
+const zTspBindingConfig: z.ZodType<TspBindingConfig> = z.object({
+  id: z.string(),
+  root: z.string().optional(),
+  tags: zTspBindingTagConfig.array().optional()
+})
+
 const zTspConfigValidator: z.ZodType<TspConfig> = z.object({
   url: z.string(),
-  apiKeyHeader: z.string().optional().default('x-api-key'),
-  apiKey: z.string()
+  apiKeyHeader: z.string().optional(),
+  apiKey: z.string(),
+  bindings: zTspBindingConfig.array().optional()
 })
 
 const zInfluxApiConfigValidator: z.ZodType<InfluxApiConfig> = z.object({
@@ -39,8 +52,8 @@ const zInfluxApiConfigValidator: z.ZodType<InfluxApiConfig> = z.object({
 const zInfluxBindingConfigValidator: z.ZodType<InfluxBindingConfig> = z.object({
   measurement: z.string(),
   timestamp: z.object({
-    key: z.string().optional(),
-    type: z.union([z.literal('string'), z.literal('number')]).optional()
+    key: z.string(),
+    type: z.union([z.literal('string'), z.literal('number')])
   }).optional(),
   tags: z.object({
     in: z.string().optional(),

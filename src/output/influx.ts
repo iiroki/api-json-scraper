@@ -72,9 +72,9 @@ export const toInfluxPoint = (data: Record<string, any>, config: InfluxBindingCo
 export const createInfluxOutput = (config: InfluxConfig): Output => {
   const writeApi = createInfluxWriteApi(config.api)
   return {
-    save: async (data, timestamp) => {
+    save: async (_, data, timestamp) => {
       const points = data.map(d => toInfluxPoint(d, config.bindings), timestamp)
-      logger.log(`Writing InfluxDB point(s): ${points.length}`)
+      logger.info(`Writing InfluxDB point(s): ${points.length}`)
       // writeApi.writePoints(points) // TODO: Enable this!
     }
   }

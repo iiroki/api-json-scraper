@@ -1,4 +1,5 @@
 import { createInfluxOutput } from './influx'
+import { createTspOutput } from './tsp'
 import { Output, OutputConfig } from '../model'
 
 export const createOutputs = (config: OutputConfig): Output[] => {
@@ -6,8 +7,7 @@ export const createOutputs = (config: OutputConfig): Output[] => {
 
   // Time Series Platform
   if (config.tsp) {
-    // TODO
-    console.warn('Time Series Platform not implemented')
+    outputs.push(createTspOutput(config.tsp))
   }
 
   // InfluxDB

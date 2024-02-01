@@ -15,7 +15,7 @@ export interface FieldBindingConfig {
 export type ApiMethod = 'GET' | 'POST'
 
 export interface ApiConfig {
-  readonly name?: string
+  readonly id: string
   readonly url: string
   readonly method?: ApiMethod
   readonly headers?: Record<string, string>
@@ -52,16 +52,33 @@ export interface InfluxApiConfig {
 
 export interface InfluxBindingConfig {
   readonly measurement: string
-  readonly timestamp?: {
-    readonly key?: string
-    readonly type?: 'string' | 'number'
-  }
+  readonly timestamp?: TimestampConfig
   readonly tags: TagBindingConfig[]
   readonly fields: FieldBindingConfig[]
 }
 
 export interface TspConfig {
-  // TODO
+  readonly url: string
+  readonly apiKey: string
+  readonly apiKeyHeader?: string
+  readonly bindings?: TspBindingConfig[]
+}
+
+export interface TspBindingConfig {
+  readonly id: string
+  readonly root?: string
+  readonly tags?: TspBindingTagConfig[]
+}
+
+export interface TspBindingTagConfig {
+  readonly slug: string
+  readonly value: string
+  readonly timestamp?: string
+}
+
+export type TimestampConfig = {
+  readonly key: string
+  readonly type: 'string' | 'number'
 }
 
 export interface Config {
@@ -70,9 +87,22 @@ export interface Config {
 }
 
 export interface Output {
-  readonly save: (data: object[], timestamp?: Date) => Promise<void>
+  readonly save: (id: string, data: object[], timestamp?: Date) => Promise<void>
 }
 
 export interface Logger {
-  readonly log: (...args: any[]) => void
+  readonly info: (...args: any[]) => void
+  readonly error: (...args: any[]) => void
+}
+
+export type TspMeasurementBatch = {
+  readonly tag: string
+  readonly location?: string
+  readonly data: TspMeasurementData[]
+  readonly versionTimestamp?: string
+}
+
+export type TspMeasurementData = {
+  readonly value: number
+  readonly timestamp: string
 }

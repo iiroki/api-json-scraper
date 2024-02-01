@@ -38,5 +38,6 @@ export const replacePropertiesFromEnv = (obj: MutableObject, nested?: string[]):
 }
 
 export const createLogger = (name: string): Logger => ({
-  log: (...args) => console.log(`[${name}]`, ...args)
+  info: (...args) => console.log(`[${name}]`, ...args),
+  error: (...args) => console.error(`[${name}] !!!`, ...args)
 })
