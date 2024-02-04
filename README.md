@@ -5,24 +5,22 @@ A very simple JSON (REST/HTTP) API Scraper.
 **Features:**
 - Simple and easy to use!
 - Multiple outputs:
-  - InfluxDB
-  - Time Series Platform (my own creation :D)
-- Various API configuration options:
-  - URL
-  - HTTP Method
-  - Headers
-  - Query Parameters
-  - Body
-  - Replace configuration values with environment variables
+  - [Time Series Platform](https://github.com/iiroki/time-series-platform) (my own creation :D)
+  - [InfluxDB](https://www.influxdata.com/)
+- Various configuration options:
+  - API
+    - URL
+    - HTTP method
+    - Headers
+    - Query parameters
+    - Body
+  - Output
+    - Define bindings/transforms per output
+  - Replace any configuration values with environment variables!
 - API request scheduling:
   - Run in intervals
   - Cron scheduling
   - Run on startup
-- API response -> InfluxDB bindings:
-  - Measurement
-  - Timestamp
-  - Tags
-  - Fields
 - Duplicate response filtering -> Only changed values are sent to outputs.
 - Supports object and array responses.
 - Fly.io deployment template with `Dockerfile`.
@@ -36,9 +34,9 @@ A very simple JSON (REST/HTTP) API Scraper.
     npm i
     ```
 
-2. Fill the required configuration described in [Configuration](#configuration).
+1. Fill the required configuration described in [Configuration](#configuration).
 
-3. Start the application in development mode with `nodemon`:
+1. Start the application in development mode with `nodemon`:
     ```
     npm run dev
     ```
@@ -52,49 +50,118 @@ The application has a deployment template in order to deploy the application to 
     flyctl launch
     ```
 
-2. Set the required InfluxDB configuration with env variables (see [InfluxDB](#influxdb])):
+1. Fill the required configuration described in [Configuration](#configuration).
+
+1. Set the secrets defined in configuration with env variables:
     ```
     flyctl secrets set <key>=<value> <key>=<value> ...
     ```
 
-3. Configure API Scraper with the JSON configuration file (see [API Scraper](#api-scraper)).
-
-4. Deploy the application:
+1. Deploy the application:
     ```
     flyctl deploy
     ```
 
 ## Configuration
 
+The application configuration is handled with a JSON file.
+By default, the file path is `config.json`, but it can be changed with the `CONFIG_PATH` env variable.
+
 The configuration is divided into two parts:
-- InfluxDB configuration with env variables
-- API Scraper configuration with a JSON file with env variable replacements
+- API Scraper configuration
+- Output configuration
 
-### InfluxDB
+```json
+{
+  "scrapers": [],
+  "outputs": {}
+}
+```
 
-InfluxDB configuration is handled with env variables.
+The configuration also supports environment variable replacements with `$` prefix (example: `$API_KEY`).
 
-| Env variable | Description | Required |
-| ----- | ----- | :-----: |
-| `INFLUX_URL` | InfluxDB URL | &check; |
-| `INFLUX_TOKEN` | InfluxDB API token | &check; |
-| `INFLUX_BUCKET` | InfluxDB bucket | &check; |
-| `INFLUX_ORG` | InfluxDB organization | &check; |
-| `INFLUX_BATCH_SIZE` | InfluxDB batch size (default: `10`) | - |
-| `INFLUX_FLUSH_INTERVAL_MS` | InfluxDB flush interval in milliseconds (default: `60 * 1000`) | - |
-| `INFLUX_GZIP_THRESHOLD` | InfluxDB gzip threshold | - |
+**Example configuration:**
 
-### API Scraper
+This configuration can be used to request data from two APIs, Pörssisähkö and OpenWeatherMap,
+and send the data into Time Series Platform.
 
-API Scraper configuration is handled with a JSON file.
-By default, the file path is `config.json`, but it can be changed with the `SCRAPER_CONFIG_PATH` env variable.
+```json
+{
+  {
+    "scrapers": [
+      {
+        "id": "porssisahko",
+        "url": "https://api.porssisahko.net/v1/latest-prices.json",
+        "requestCronSchedule": "0 * * * *"
+      },
+      {
+        "id": "weather",
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "query": {
+          "appid": "$OPENWEATHER_API_KEY",
+          "units": "metric",
+          "lon": "23.726347",
+          "lat": "61.4938809"
+        },
+        "requestCronSchedule": "*/10 * * * *"
+      }
+    ],
+    "outputs": {
+      "tsp": {
+        "url": "$TSP_URL",
+        "apiKey": "$TSP_API_KEY",
+        "bindings": [
+          {
+            "id": "porssisahko",
+            "root": "prices",
+            "measurements": [
+              {
+                "tag": "electricity_price",
+                "value": "price",
+                "timestamp": "startDate"
+              }
+            ]
+          },
+          {
+            "id": "weather",
+            "measurements": [
+              {
+                "tag": "temperature",
+                "value": "main.temp"
+              },
+              {
+                "tag": "humidity",
+                "value": "main.humidity"
+              },
+              {
+                "tag": "wind_speed",
+                "value": "wind.speed"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+```
 
-The JSON configuration consists of an array of API Scraper configurations.
+### Scrapers
 
-**API configuration:**
+`scrapers` is used to define the API scrapers that act as the data sources of the application.
+
+`scrapers` constists of array of `Scraper` objects (`Scraper[]`).
+
+```json
+{
+  "scrapers": []
+}
+```
+
+**`Scraper`:**
 | Key | Description | Type | Required |
 | ----- | ----- | ----- | :-----: |
-| `name` | Display name of the API | `string` | - |
+| `id` | ID of the API scraper (also used by the outputs) | `string` | &check; |
 | `url` | API URL | `string` | &check; |
 | `method` | Request HTTP method (default: `GET`) | `GET`, `POST` | - |
 | `headers` | Request HTTP headers | `Record<string, string>` | - |
@@ -105,6 +172,66 @@ The JSON configuration consists of an array of API Scraper configurations.
 | `requestOnStartup` | Perform the API request on application startup | `boolean` | - |
 | `filterDuplicateValues` | Whether adjacent duplicate values should be sent to InfluxDB | `boolean` | - |
 | `bindings` | API response -> InfluxDB bindings | See InfluxDB bindings below! | &check; |
+
+### Outputs
+
+`outputs` is used to define where the data produced by the API scrapers should be sent.
+
+```json
+{
+  "outputs": {
+    "tsp": {},
+    "influx": {}
+  }
+}
+```
+
+#### Time Series Platform
+
+**`TspConfig`:**
+| Key | Description | Type | Required |
+| ----- | ----- | ----- | :-----: |
+| `url` | Time Series Platform URL | `string` | &check; |
+| `apiKey` | API key | `string` | &check; |
+| `apiKey` | API key header (if not default) | `string` | - |
+| `bindings` | API -> TSP bindings | `TspBindingConfig[]` | - |
+
+**`TspBindingConfig`:**
+| Key | Description | Type | Required |
+| ----- | ----- | ----- | :-----: |
+| `id` | ID of the API scraper | `string` | &check; |
+| `root` | Root object of the API response that should be transformed | `string` | - |
+| `measurements` | API -> TSP measurement bindings | `TspBindingMeasurementConfig[]` | - |
+
+**`TspBindingMeasurementConfig`:**
+| Key | Description | Type | Required |
+| ----- | ----- | ----- | :-----: |
+| `tag` | Measurement tag slug | `string` | &check; |
+| `location` | Measurement location slug | `string` | - |
+| `value` | Value property of the API response | `string` | &check; |
+| `timestamp` | Timestamp property of the API response | `string` | - |
+
+#### InfluxDB
+
+**!!! NOTE !!!**
+InfluxDB integration is somewhat broken at the moment after adding support for multiple outputs (will be fixed later).
+
+**`InfluxConfig`:**
+| Key | Type | Required |
+| ----- | ----- | ----- | :-----: |
+| `api` | `InfluxApiConfig` | &check; |
+| `bindings` | `InfluxBindingConfig` | &check; |
+
+**`InfluxApiConfig`:**
+| Key | Description | Type | Required |
+| ----- | ----- | ----- | :-----: |
+| `url` | InfluxDB URL | `string` | &check; |
+| `token` | InfluxDB API token | `string` | &check; |
+| `bucket` | InfluxDB bucket | `string` | &check; |
+| `org` | InfluxDB organization | `string` | &check; |
+| `batchSize` | InfluxDB batch size (default: `10`) | `number` | - |
+| `flushIntervalMs` | InfluxDB flush interval in milliseconds (default: `60 * 1000`) | `number` | - |
+| `gzipThreshold` | InfluxDB gzip threshold | `number` | - |
 
 **InfluxDB binding configuration:**
 | Key | Description | Type | Required |
@@ -122,9 +249,8 @@ InfluxDB tag/field bindings are used to map the values from API responses into t
 
 **NOTES:**
 - If no `timestamp` InfluxDB binding is specified, the timestamp is set to the current time.
-- `headers` and `query` support env variable replacements with `$<ENV_KEY>`, which can be used to read values from env variables.
 
-#### Example
+**InfluxDB example:**
 
 The example uses [OpenWeather API](https://openweathermap.org/api) to fetch weather information and write the results to InfluxDB:
 - Read OpenWeather API key from `OPENWEATHER_APPID` env variable
@@ -142,63 +268,50 @@ The example uses [OpenWeather API](https://openweathermap.org/api) to fetch weat
     - `main.humidity` -> `humidityRh` (float)
     - `wind.speed` -> `windSpeedMs` (float)
 
-**As JSON configuration:**
+**JSON configuration:**
 ```json
-[
-  {
-    "name": "OpenWeather",
-    "url": "https://api.openweathermap.org/data/2.5/weather",
-    "query": {
-      "appid": "$OPENWEATHER_APPID",
-      "lat": "61.4509034",
-      "lon": "23.8514239",
-      "units": "metric"
-    },
-    "requestCronSchedule": "* * * * *",
-    "requestOnStartup": true,
-    "bindings": {
-      "measurement": "weather",
-      "tags": [
-        {
-          "in": "name",
-          "out": "location"
-        },
-        {
-          "out": "provider",
-          "value": "OpenWeather"
-        }
-      ],
-      "fields": [
-        {
-          "in": "main.temp",
-          "out": "temperatureC",
-          "type": "float"
-        },
-        {
-          "in": "main.feels_like",
-          "out": "feelsLikeC",
-          "type": "float"
-        },
-        {
-          "in": "main.humidity",
-          "out": "humidityRh",
-          "type": "float"
-        },
-        {
-          "in": "wind.speed",
-          "out": "windSpeedMs",
-          "type": "float"
-        }
-      ]
-    }
+{
+  "bindings": {
+    "measurement": "weather",
+    "tags": [
+      {
+        "in": "name",
+        "out": "location"
+      },
+      {
+        "out": "provider",
+        "value": "OpenWeather"
+      }
+    ],
+    "fields": [
+      {
+        "in": "main.temp",
+        "out": "temperatureC",
+        "type": "float"
+      },
+      {
+        "in": "main.feels_like",
+        "out": "feelsLikeC",
+        "type": "float"
+      },
+      {
+        "in": "main.humidity",
+        "out": "humidityRh",
+        "type": "float"
+      },
+      {
+        "in": "wind.speed",
+        "out": "windSpeedMs",
+        "type": "float"
+      }
+    ]
   }
-]
+}
 ```
 
 Example OpenWeather API response (some fields omitted):
 ```json
 {
-  ...
   "main": {
     "temp": -2.84,
     "feels_like": -7,
@@ -207,14 +320,11 @@ Example OpenWeather API response (some fields omitted):
     "pressure": 994,
     "humidity": 78
   },
-  ...
   "wind": {
     "speed": 3.09,
     "deg": 300
   },
-  ...
   "name": "Example-Location",
-  ...
 }
 ```
 

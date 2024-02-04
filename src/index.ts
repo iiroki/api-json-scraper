@@ -23,7 +23,7 @@ for (const c of config.scrapers) {
 
     if (response) {
       if (c.filterDuplicateValues && areEqualSimple(response, lastResponse)) {
-        logger.info('Received same response as the previous one, skipping...')
+        logger.info('Received the same response as the previous one, skipping...')
         return
       }
 

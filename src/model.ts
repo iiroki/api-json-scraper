@@ -1,12 +1,12 @@
 export type FieldType = 'int' | 'float' | 'string'
 
-export interface TagBindingConfig {
+export type TagBindingConfig = {
   readonly in?: string
   readonly out: string
   readonly value?: string
 }
 
-export interface FieldBindingConfig {
+export type FieldBindingConfig = {
   readonly in: string
   readonly out: string
   readonly type: FieldType
@@ -14,7 +14,7 @@ export interface FieldBindingConfig {
 
 export type ApiMethod = 'GET' | 'POST'
 
-export interface ApiConfig {
+export type ApiConfig = {
   readonly id: string
   readonly url: string
   readonly method?: ApiMethod
@@ -23,24 +23,24 @@ export interface ApiConfig {
   readonly body?: any
 }
 
-export interface ScraperConfig extends ApiConfig {
+export type ScraperConfig = ApiConfig & {
   readonly requestIntervalMs?: number
   readonly requestCronSchedule?: string
   readonly requestOnStartup?: boolean
   readonly filterDuplicateValues?: boolean
 }
 
-export interface OutputConfig {
+export type OutputConfig = {
   readonly influx?: InfluxConfig
   readonly tsp?: TspConfig
 }
 
-export interface InfluxConfig {
+export type InfluxConfig = {
   readonly api: InfluxApiConfig
   readonly bindings: InfluxBindingConfig
 }
 
-export interface InfluxApiConfig {
+export type InfluxApiConfig = {
   readonly url: string
   readonly token: string
   readonly bucket: string
@@ -50,28 +50,27 @@ export interface InfluxApiConfig {
   readonly gzipThreshold?: number
 }
 
-export interface InfluxBindingConfig {
+export type InfluxBindingConfig = CommonBindingConfig & {
   readonly measurement: string
   readonly timestamp?: TimestampConfig
   readonly tags: TagBindingConfig[]
   readonly fields: FieldBindingConfig[]
 }
 
-export interface TspConfig {
+export type TspConfig = {
   readonly url: string
   readonly apiKey: string
   readonly apiKeyHeader?: string
   readonly bindings?: TspBindingConfig[]
 }
 
-export interface TspBindingConfig {
-  readonly id: string
-  readonly root?: string
-  readonly tags?: TspBindingTagConfig[]
+export type TspBindingConfig = CommonBindingConfig & {
+  readonly measurements?: TspBindingMeasurementConfig[]
 }
 
-export interface TspBindingTagConfig {
-  readonly slug: string
+export type TspBindingMeasurementConfig = {
+  readonly tag: string
+  readonly location?: string
   readonly value: string
   readonly timestamp?: string
 }
@@ -81,7 +80,12 @@ export type TimestampConfig = {
   readonly type: 'string' | 'number'
 }
 
-export interface Config {
+export type CommonBindingConfig = {
+  readonly id: string
+  readonly root?: string
+}
+
+export type Config = {
   readonly scrapers: ScraperConfig[]
   readonly outputs: OutputConfig
 }

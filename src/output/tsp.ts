@@ -10,7 +10,7 @@ interface TspTransformer {
 const logger = createLogger('Time Series Platform')
 
 export const createTspTransformers = (config: Omit<TspBindingConfig, 'id'>): TspTransformer[] => {
-  return (config.tags ?? []).map(t => ({
+  return (config.measurements ?? []).map(t => ({
     transform: (data, apiTimestamp) => {
       const measurementMap = new Map<string, TspMeasurementBatch>()
       const insertMeasurement = (tag: string, measurement: TspMeasurementData) => {
@@ -33,13 +33,15 @@ export const createTspTransformers = (config: Omit<TspBindingConfig, 'id'>): Tsp
           let timestamp = apiTimestamp?.toISOString()
           if (t.timestamp) {
             const tsRaw: unknown = get(i, t.timestamp)
-            if (tsRaw) {
-              timestamp = typeof tsRaw === 'string' ? tsRaw : String(tsRaw)
+            if (typeof tsRaw === 'string') {
+              timestamp = tsRaw
+            } else if (typeof tsRaw === 'number') {
+              timestamp = new Date(tsRaw).toISOString()
             }
           }
 
           if (timestamp) {
-            insertMeasurement(t.slug, { value, timestamp })
+            insertMeasurement(t.tag, { value, timestamp })
           }
         }
       }
@@ -77,7 +79,7 @@ export const createTspOutput = ({ url, apiKey, apiKeyHeader, bindings }: TspConf
         await axios.post(measurementUrl, measurements, { headers: apiKeyHeaders })
         logger.info([
           `Sent ${measurements.length} measurement batch(es)`,
-          `(rows: ${measurements.flatMap(b => b.data).length} )`,
+          `(rows: ${measurements.flatMap(b => b.data).length})`,
           `in ${Math.floor(performance.now() - start)} ms`
         ].join(' '))
       } catch (err) {

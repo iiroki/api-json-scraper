@@ -1,11 +1,19 @@
 import { readFileSync } from 'node:fs'
 import dotenv from 'dotenv'
 import { z } from 'zod'
-import { ScraperConfig, Config, InfluxApiConfig, InfluxBindingConfig, TspConfig, TspBindingConfig, TspBindingTagConfig } from './model'
+import {
+  ScraperConfig,
+  Config,
+  InfluxApiConfig,
+  InfluxBindingConfig,
+  TspConfig,
+  TspBindingConfig,
+  TspBindingMeasurementConfig
+} from './model'
 import { replacePropertiesFromEnv } from './util'
 
 dotenv.config()
-const SCAPER_CONFIG_PATH = process.env.SCAPER_CONFIG_PATH ?? 'config.json' // Default path
+const SCAPER_CONFIG_PATH = process.env.CONFIG_PATH ?? 'config.json' // Default path
 
 const zScraperConfigValidator: z.ZodType<ScraperConfig> = z.object({
   id: z.string(),
@@ -20,8 +28,9 @@ const zScraperConfigValidator: z.ZodType<ScraperConfig> = z.object({
   filterDuplicateValues: z.boolean().optional()
 })
 
-const zTspBindingTagConfig: z.ZodType<TspBindingTagConfig> = z.object({
-  slug: z.string(),
+const zTspBindingMeasurementConfig: z.ZodType<TspBindingMeasurementConfig> = z.object({
+  tag: z.string(),
+  location: z.string().optional(),
   value: z.string(),
   timestamp: z.string().optional()
 })
@@ -29,7 +38,7 @@ const zTspBindingTagConfig: z.ZodType<TspBindingTagConfig> = z.object({
 const zTspBindingConfig: z.ZodType<TspBindingConfig> = z.object({
   id: z.string(),
   root: z.string().optional(),
-  tags: zTspBindingTagConfig.array().optional()
+  measurements: zTspBindingMeasurementConfig.array().optional()
 })
 
 const zTspConfigValidator: z.ZodType<TspConfig> = z.object({
@@ -50,6 +59,8 @@ const zInfluxApiConfigValidator: z.ZodType<InfluxApiConfig> = z.object({
 })
 
 const zInfluxBindingConfigValidator: z.ZodType<InfluxBindingConfig> = z.object({
+  id: z.string(),
+  root: z.string().optional(),
   measurement: z.string(),
   timestamp: z.object({
     key: z.string(),
