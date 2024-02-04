@@ -13,14 +13,14 @@ export const createTspTransformers = (config: Omit<TspBindingConfig, 'id'>): Tsp
   return (config.measurements ?? []).map(t => ({
     transform: (data, apiTimestamp) => {
       const measurementMap = new Map<string, TspMeasurementBatch>()
-      const insertMeasurement = (tag: string, measurement: TspMeasurementData) => {
+      const insertMeasurement = (tag: string, measurement: TspMeasurementData, location?: string) => {
         const existing = measurementMap.get(tag)
         if (existing) {
           existing.data.push(measurement)
         } else {
           measurementMap.set(
             tag,
-            { tag, data: [measurement], versionTimestamp: (apiTimestamp ?? new Date()).toISOString() }
+            { tag, location, data: [measurement], versionTimestamp: (apiTimestamp ?? new Date()).toISOString() }
           )
         }
       }
@@ -41,7 +41,7 @@ export const createTspTransformers = (config: Omit<TspBindingConfig, 'id'>): Tsp
           }
 
           if (timestamp) {
-            insertMeasurement(t.tag, { value, timestamp })
+            insertMeasurement(t.tag, { value, timestamp }, t.location)
           }
         }
       }
