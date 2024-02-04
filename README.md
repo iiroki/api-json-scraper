@@ -47,19 +47,19 @@ The application has a deployment template in order to deploy the application to 
 
 1. Launch new Fly app:
     ```
-    flyctl launch
+    fly launch
     ```
 
 1. Fill the required configuration described in [Configuration](#configuration).
 
 1. Set the secrets defined in configuration with env variables:
     ```
-    flyctl secrets set <key>=<value> <key>=<value> ...
+    fly secrets set <key>=<value> <key>=<value> ...
     ```
 
 1. Deploy the application:
     ```
-    flyctl deploy
+    fly deploy
     ```
 
 ## Configuration

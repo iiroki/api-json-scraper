@@ -1,4 +1,17 @@
-app = "api-json-scraper"
+# fly.toml app configuration file generated for api-json-scraper on 2024-02-04T10:05:47+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'api-json-scraper'
+primary_region = 'arn'
+
+[build]
 
 [deploy]
-  strategy = "immediate"
+  strategy = 'immediate'
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
